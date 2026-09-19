@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, String, Float, DateTime, ForeignKey, Text, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./nexgene.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/nexgene.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "nexgene-dev-secret-change-me")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
 SessionLocal = sessionmaker(bind=engine)
@@ -136,8 +136,9 @@ def insights(u:User=Depends(current_user),s:Session=Depends(db)):
         items.append("NexGene has enough data to start looking for relationships between sleep and stress.")
     return {"status":"active","items":items[:4] or ["Your baseline is taking shape. Keep the signal coming."]}
 
-# Serve mobile frontend
-_mobile = Path(__file__).resolve().parents[2] / "mobile"
+# Serve UI (local/Docker). On Vercel, public/ is served by the CDN.
+_root = Path(__file__).resolve().parents[2]
+_mobile = _root / "public" if (_root / "public" / "index.html").exists() else _root / "mobile"
 if _mobile.exists():
     @app.get("/")
     def index():
