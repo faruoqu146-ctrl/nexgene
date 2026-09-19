@@ -1,50 +1,45 @@
 # NexGene v0.7.0
 
-## Phase: Patterns & Longitudinal Intelligence
+Patterns & Longitudinal Intelligence — mobile-first wellness check-ins with FastAPI.
 
-This iteration moves NexGene from a check-in prototype toward a product that learns from the user's history.
+## Run locally
 
-### Included
-- Raven-inspired visual system
-- Account creation and sign-in UI
-- Tap-first morning/evening check-ins
-- Expanded lifestyle variables
-- Today snapshot
-- 30-day Patterns view with daily trend visualization
-- Living Timeline view
-- Early longitudinal insights API
-- Server-side user identity enforcement
-- Dockerized FastAPI + SQLite development stack
-- Contract test
-- Mobile frontend served from the API root (`/`)
-
-## Run
-
-### With Docker
 ```bash
-docker compose up --build
+pip install -r requirements.txt
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
 ```
 
 Open http://localhost:8000
 
-API docs: http://localhost:8000/docs
+## Deploy on Vercel
 
-Tests:
+This repo is configured for Vercel’s Python / FastAPI runtime:
+
+- Entrypoint: `backend.app.main:app` (see `pyproject.toml`)
+- Static UI: `public/` (served by Vercel CDN)
+- Default DB: SQLite in `/tmp` (ephemeral — demo only)
+
+For persistent data, set `DATABASE_URL` to a Postgres connection string (e.g. Neon free tier) and `SECRET_KEY` in Vercel env vars.
+
 ```bash
-docker compose exec api pytest -q
+vercel          # preview
+vercel --prod   # production
 ```
 
-### Local (no Docker)
+Or import the GitHub repo at https://vercel.com/new
+
+## Docker
+
 ```bash
-pip install -r backend/requirements.txt
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+docker compose up --build
 ```
 
-Then open http://localhost:8000
+## Tests
 
 ```bash
 pytest backend/tests -q
 ```
 
-## Important
-This is still a development prototype. It is not production-ready for clinical or research deployment. The next engineering hardening layer should restore PostgreSQL as the default service, add migrations, structured provenance/consent, exports/deletion, rate limiting, and stronger auth/session controls.
+## Note
+
+Prototype only — not for clinical use. Next: Postgres, migrations, stronger auth.
