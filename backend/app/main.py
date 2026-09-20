@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from pathlib import Path
 import os
 from collections import defaultdict
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
@@ -14,13 +13,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, String, Float, DateTime, ForeignKey, Text, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/nexgene.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./nexgene.db")
 SECRET_KEY = os.getenv("SECRET_KEY", "nexgene-dev-secret-change-me")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {})
 SessionLocal = sessionmaker(bind=engine)
 pwd = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 bearer = HTTPBearer(auto_error=False)
-app = FastAPI(title="NexGene API", version="0.7.0")
+app = FastAPI(title="NexGene API", version="0.7.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 class Base(DeclarativeBase): pass
@@ -61,7 +60,13 @@ def current_user(creds: HTTPAuthorizationCredentials = Depends(bearer), s: Sessi
     return u
 
 @app.get("/api/v1/health")
-def health(): return {"status":"ok","version":"0.7.0"}
+def health(): return {"status":"ok","version":"0.7.1"}
+
+# Serve the mobile app from the same origin so sign-in cannot fail because
+# the browser is pointing at a different host/port than the API.
+@app.get("/", include_in_schema=False)
+def root(): return FileResponse("mobile/index.html")
+app.mount("/static", StaticFiles(directory="mobile"), name="mobile")
 @app.post("/api/v1/auth/register")
 def register(x: AuthIn, s: Session=Depends(db)):
     email=x.email.strip().lower()
@@ -135,12 +140,3 @@ def insights(u:User=Depends(current_user),s:Session=Depends(db)):
     if nums.get("sleep_duration") and nums.get("stress"):
         items.append("NexGene has enough data to start looking for relationships between sleep and stress.")
     return {"status":"active","items":items[:4] or ["Your baseline is taking shape. Keep the signal coming."]}
-
-# Serve UI (local/Docker). On Vercel, public/ is served by the CDN.
-_root = Path(__file__).resolve().parents[2]
-_mobile = _root / "public" if (_root / "public" / "index.html").exists() else _root / "mobile"
-if _mobile.exists():
-    @app.get("/")
-    def index():
-        return FileResponse(_mobile / "index.html")
-    app.mount("/", StaticFiles(directory=str(_mobile)), name="mobile")
