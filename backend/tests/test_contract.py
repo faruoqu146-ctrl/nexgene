@@ -1,13 +1,18 @@
 from pathlib import Path
 
-def test_v07_contract():
+def test_v071_contract():
     root=Path(__file__).parents[2]
     main=(root/'backend/app/main.py').read_text()
     js=(root/'mobile/app.js').read_text()
     html=(root/'mobile/index.html').read_text()
-    assert 'version="0.7.0"' in main
-    assert '/api/v1/patterns' in main
-    assert '/api/v1/insights' in main
-    assert 'showView(\'patterns\')' in html
-    assert 'loadPatterns' in js
+    compose=(root/'docker-compose.yml').read_text()
+    assert 'version="0.7.1"' in main
+    assert 'FileResponse("mobile/index.html")' in main
+    assert 'app.mount("/static"' in main
+    assert 'window.location.origin' in js
+    assert '/api/v1/auth/login' in js and '/api/v1/auth/register' in js
+    assert '/api/v1/auth/me' in js
+    assert '/api/v1/patterns' in main and '/api/v1/insights' in main
+    assert '/static/styles.css' in html and '/static/app.js' in html
+    assert 'nexgene_data' in compose
     assert 'activity_level' in js and 'diet_quality' in js and 'nicotine' in js
