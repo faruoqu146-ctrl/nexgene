@@ -1,45 +1,30 @@
-# NexGene v0.7.0
+# NexGene v0.7.1
 
-Patterns & Longitudinal Intelligence — mobile-first wellness check-ins with FastAPI.
+Authentication and runtime stabilization release.
 
-## Run locally
-
-```bash
-pip install -r requirements.txt
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
-```
-
-Open http://localhost:8000
-
-## Deploy on Vercel
-
-This repo is configured for Vercel’s Python / FastAPI runtime:
-
-- Entrypoint: `backend.app.main:app` (see `pyproject.toml`)
-- Static UI: `public/` (served by Vercel CDN)
-- Default DB: SQLite in `/tmp` (ephemeral — demo only)
-
-For persistent data, set `DATABASE_URL` to a Postgres connection string (e.g. Neon free tier) and `SECRET_KEY` in Vercel env vars.
-
-```bash
-vercel          # preview
-vercel --prod   # production
-```
-
-Or import the GitHub repo at https://vercel.com/new
-
-## Docker
+## Run
 
 ```bash
 docker compose up --build
 ```
 
-## Tests
+Open **http://localhost:8000**. The mobile UI and API are served from the same origin.
+
+Create an account, then sign in. Your development SQLite database is persisted in the `nexgene_data` Docker volume.
+
+## Test
 
 ```bash
-pytest backend/tests -q
+docker compose exec api pytest -q
 ```
 
-## Note
+## v0.7.1 fixes
+- Same-origin mobile UI and API
+- Sign-in and registration session restoration
+- Clear authentication/network errors
+- Session expiry handling
+- Persistent SQLite volume for development
+- Health endpoint reports 0.7.1
+- Existing Today, Patterns, Timeline and check-in flows retained
 
-Prototype only — not for clinical use. Next: Postgres, migrations, stronger auth.
+This is a development build, not a production deployment.
