@@ -1,124 +1,16 @@
-const API=window.location.origin.replace(/\/$/,"");
-let csrfToken=null;
-
-async function api(path, opts={}){
-  const headers=Object.assign({"Content-Type":"application/json"}, opts.headers||{});
-  if(opts.method && opts.method!=="GET" && csrfToken) headers["X-CSRF-Token"]=csrfToken;
-  const r=await fetch(API+path,{...opts,headers,credentials:"include"});
-  const text=await r.text();
-  let data=null; try{data=text?JSON.parse(text):null}catch(e){data={raw:text}}
-  if(!r.ok){const err=new Error((data&&(data.detail||data.message))||r.statusText); err.status=r.status; err.data=data; throw err}
-  return data;
-}
-
-function setCsrfFromCookie(){
-  const m=document.cookie.match(/(?:^|; )nexgene_csrf=([^;]*)/);
-  csrfToken=m?decodeURIComponent(m[1]):null;
-}
-
-async function refreshCsrf(){
-  await api("/api/v1/auth/csrf");
-  setCsrfFromCookie();
-}
-
-function show(id){
-  document.querySelectorAll(".panel").forEach(p=>p.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-}
-
-function toast(msg, kind="info"){
-  const t=document.getElementById("toast");
-  t.textContent=msg; t.className="toast "+kind; t.classList.remove("hidden");
-  setTimeout(()=>t.classList.add("hidden"),3200);
-}
-
-async function register(){
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
-  try{
-    const data=await api("/api/v1/auth/register",{method:"POST",body:JSON.stringify({email,password})});
-    setCsrfFromCookie();
-    if(data.dev_verification_token) toast("Dev verify token: "+data.dev_verification_token,"info");
-    await boot();
-  }catch(e){toast(e.message||"Register failed","error")}
-}
-
-async function login(){
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
-  try{
-    await api("/api/v1/auth/login",{method:"POST",body:JSON.stringify({email,password})});
-    setCsrfFromCookie();
-    await boot();
-  }catch(e){toast(e.message||"Login failed","error")}
-}
-
-async function logout(){
-  try{
-    await api("/api/v1/auth/logout",{method:"POST"});
-    csrfToken=null;
-    show("auth-panel");
-    toast("Signed out");
-  }catch(e){toast(e.message||"Logout failed","error")}
-}
-
-async function saveCheckin(period){
-  const values={};
-  document.querySelectorAll(`[data-period="${period}"] [data-kind]`).forEach(el=>{
-    const kind=el.getAttribute("data-kind");
-    const v=el.value;
-    if(v===""||v==null) return;
-    values[kind]=isNaN(Number(v))?v:Number(v);
-  });
-  try{
-    await api("/api/v1/checkins/"+period,{method:"POST",body:JSON.stringify({values})});
-    toast("Saved "+period+" check-in");
-    await loadToday();
-  }catch(e){toast(e.message||"Save failed","error")}
-}
-
-async function loadToday(){
-  try{
-    const data=await api("/api/v1/today");
-    const box=document.getElementById("today-summary");
-    box.innerHTML=Object.keys(data).length?Object.entries(data).map(([k,v])=>`<div><strong>${k}</strong>: ${v}</div>`).join(""):"<em>No readings in the last 24h</em>";
-  }catch(e){}
-}
-
-async function loadPatterns(){
-  try{
-    const data=await api("/api/v1/patterns?days=30");
-    const box=document.getElementById("patterns-box");
-    const avg=data.averages||{};
-    box.innerHTML=`<div>Observations: ${data.observation_count}</div>`+Object.entries(avg).map(([k,v])=>`<div><strong>${k}</strong> avg: ${v}</div>`).join("");
-  }catch(e){}
-}
-
-async function loadInsights(){
-  try{
-    const data=await api("/api/v1/insights");
-    const box=document.getElementById("insights-box");
-    box.innerHTML=`<div class="status">${data.status}</div>`+(data.items||[]).map(i=>`<div class="insight">${i}</div>`).join("");
-  }catch(e){}
-}
-
-async function boot(){
-  try{
-    const me=await api("/api/v1/auth/me");
-    document.getElementById("user-email").textContent=me.email+(me.email_verified?" ✓":"");
-    setCsrfFromCookie();
-    show("app-panel");
-    await Promise.all([loadToday(),loadPatterns(),loadInsights()]);
-  }catch(e){
-    show("auth-panel");
-  }
-}
-
-document.addEventListener("DOMContentLoaded",()=>{
-  document.getElementById("btn-register").onclick=register;
-  document.getElementById("btn-login").onclick=login;
-  document.getElementById("btn-logout").onclick=logout;
-  document.getElementById("btn-morning").onclick=()=>saveCheckin("morning");
-  document.getElementById("btn-evening").onclick=()=>saveCheckin("evening");
-  boot();
-});
+const API=window.location.origin.replace(/\/$/,'');let csrf='',mode='',idx=0,data={};
+const M=[['sleep_duration','How long did you sleep?','Pick the window that feels closest.',[['◔','Under 5h',4.5],['◑','5–6h',5.5],['◒','6–7h',6.5],['◕','7–8h',7.5],['◉','8–9h',8.5],['✦','9h+',9.5]]],['sleep_quality','How did your sleep feel?','No scorekeeping. Just your read.',[['☹','Rough',2],['◔','Restless',4],['◑','Okay',6],['◕','Good',8],['☺','Deep',10]]],['energy','How are you arriving today?','First instinct.',[['🪫','Drained',2],['◔','Low',4],['◑','Steady',6],['◕','Good',8],['⚡','Charged',10]]],['morning_context','Anything unusual?','Optional. You can always skip.',[['○','Nothing unusual','none'],['◌','Headache','headache'],['⌁','Fatigue','fatigue'],['△','Pain','pain'],['→','Skip','skipped']]]];
+const E=[['mood','How was today?','The overall texture of the day.',[['☹','Low',2],['◔','Heavy',4],['◑','Mixed',6],['◕','Good',8],['☺','Great',10]]],['stress','Where was your stress?','Today’s signal, not a diagnosis.',[['○','Very low',1],['◔','Low',3],['◑','Moderate',5],['◕','High',7],['●','Very high',9]]],['focus','How was your focus?','How easy was it to stay with things?',[['☁','Scattered',2],['◔','Patchy',4],['◑','Okay',6],['◕','Strong',8],['◎','Locked in',10]]],['activity_level','How much did you move?','Minutes can come later.',[['○','Very little','very_little'],['◔','Light','light'],['◑','Moderate','moderate'],['◕','A lot','high'],['→','Skip','skipped']]],['diet_quality','How did you eat?','Think balance, not calories.',[['·','Chaotic','low'],['◔','Mostly quick','fair'],['◑','Mixed','mixed'],['◕','Mostly balanced','good'],['✦','Very balanced','high']]],['caffeine','Caffeine today?','Coffee, tea and energy drinks count.',[['○','None',0],['◔','1','1'],['◑','2','2'],['◕','3+','3']]],['alcohol','Alcohol today?','Optional, no judgement.',[['○','None',0],['◔','1','1'],['◑','2','2'],['◕','3+','3']]],['nicotine','Nicotine / smoking?','Optional context for your baseline.',[['○','None','none'],['◔','Some','some'],['◕','Frequent','frequent']]]];
+const $=id=>document.getElementById(id);async function account(){if(csrf){await fetch(API+'/api/v1/auth/logout',{method:'POST',headers:{'X-CSRF-Token':csrf}});csrf='';$('account').textContent='SIGN IN';alert('Signed out.');}else $('auth').classList.toggle('hide')}
+async function authCall(path){const email=$('email').value.trim().toLowerCase(),password=$('password').value;if(!email||password.length<12||!/[a-z]/.test(password)||!/[A-Z]/.test(password)||!/[0-9]/.test(password)||!/[^A-Za-z0-9]/.test(password)){$('authmsg').textContent='Use 12+ chars with upper, lower, number, symbol.';return}$('authmsg').textContent='Working…';try{const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email,password})});const j=await r.json();if(!r.ok)throw new Error(j.detail||'Auth failed');csrf=document.cookie.split('; ').find(x=>x.startsWith('nexgene_csrf='))?.split('=')[1]||'';$('auth').classList.add('hide');$('account').textContent='SIGN OUT';$('authmsg').textContent='';await load()}catch(e){$('authmsg').textContent=e.message}}
+function register(){authCall('/api/v1/auth/register')}function login(){authCall('/api/v1/auth/login')}
+async function get(path){const r=await fetch(API+path,{credentials:'include'});if(r.status===401){csrf='';$('account').textContent='SIGN IN';return{}}return r.json()}
+function start(m){if(!csrf){$('auth').classList.remove('hide');$('authmsg').textContent='Create an account first. Your check-ins need somewhere private to live.';return}mode=m;idx=0;data={};$('sheet').classList.remove('hide');render()}
+function render(){const arr=mode==='morning'?M:E,item=arr[idx];$('step').textContent=`${idx+1} / ${arr.length}`;$('q').innerHTML=`<div class="k">${mode} check-in</div><h3>${item[1]}</h3><p>${item[2]}</p>`;$('choices').innerHTML='';item[3].forEach(o=>{const b=document.createElement('button');b.className='choice';b.innerHTML=`<i>${o[0]}</i><b>${o[1]}</b>`;b.onclick=()=>{[...$('choices').children].forEach(x=>x.classList.remove('sel'));b.classList.add('sel');data[item[0]]=o[2];$('next').disabled=false};$('choices').appendChild(b)});$('next').disabled=true}
+function closeSheet(){$('sheet').classList.add('hide')}
+async function nextStep(){const arr=mode==='morning'?M:E;if(idx<arr.length-1){idx++;render();return}$('next').disabled=true;$('next').textContent='Saving…';try{await fetch(API+'/api/v1/checkins/'+mode,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},credentials:'include',body:JSON.stringify({values:data})});closeSheet();$('next').textContent='CONTINUE';await load()}catch(e){alert(e.message||'Save failed');$('next').textContent='CONTINUE';$('next').disabled=false}}
+function showView(v){['today','patterns','timeline'].forEach(x=>{(x==='today'?$('todayView'):$(x+'View')).classList.toggle('hide',x!==v);$('n'+x[0].toUpperCase()+x.slice(1)).classList.toggle('active',x===v)});if(v==='patterns')loadPatterns();if(v==='timeline')loadTimeline()}
+async function load(){const d=await get('/api/v1/today');const keys=[['sleep_duration','SLEEP',v=>v+'h'],['energy','ENERGY',v=>v+'/10'],['mood','MOOD',v=>v+'/10'],['stress','STRESS',v=>v+'/10'],['focus','FOCUS',v=>v+'/10'],['diet_quality','EATING',v=>v]];let html='';keys.forEach(x=>{if(d[x[0]]!==undefined)html+=`<div class="metric"><span>${x[1]}</span><b>${x[2](d[x[0]])}</b></div>`});$('snapshot').innerHTML=html||'<div class="empty"><b>A quiet page.</b><span>Two tiny check-ins begin the picture.</span></div>';const c=(d.sleep_duration!==undefined?1:0)+(d.mood!==undefined?1:0);$('count').textContent=`${c} / 2 check-ins`;$('bar').style.width=c*50+'%';const ins=await get('/api/v1/insights');$('insight').textContent=ins.items?.[0]||'Your baseline is beginning to take shape.';$('account').textContent='SIGN OUT'}
+async function loadPatterns(){const d=await get('/api/v1/patterns');const labels=[['sleep_duration','Sleep','h'],['sleep_quality','Sleep quality','/10'],['energy','Energy','/10'],['stress','Stress','/10'],['focus','Focus','/10']];$('patternCards').innerHTML=labels.map(([k,l,u])=>d.averages?.[k]!==undefined?`<div class="pcard"><span>${l}</span><b>${d.averages[k]}${u}</b></div>`:'').join('')||'<div class="empty"><b>Still gathering signal.</b><span>Keep checking in and the pattern view will wake up.</span></div>';const series=d.series||[];$('chart').innerHTML=series.slice(-14).map(p=>{const sleep=((p.sleep_duration||0)/10)*100,focus=((p.focus||0)/10)*100;return `<div class="bar" style="height:${Math.max(sleep,focus,4)}%" title="${p.date}"></div>`}).join('')||''}
+async function loadTimeline(){const rows=await get('/api/v1/timeline');$('timeline').innerHTML=rows.slice(0,60).map(r=>`<div class="event"><span>${new Date(r.recorded_at).toLocaleDateString()}</span><b>${r.kind.replaceAll('_',' ')}</b><em>${r.value}</em></div>`).join('')||'<div class="empty"><b>No observations yet.</b><span>Your first check-in will appear here.</span></div>'}
+async function boot(){const d=new Date();$('date').textContent=d.toLocaleDateString(undefined,{day:'2-digit',month:'short'}).toUpperCase();$('greeting').textContent=d.getHours()<12?'Good morning.':d.getHours()<18?'Good afternoon.':'Good evening.';if(document.cookie.includes('nexgene_csrf=')){await fetch(API+'/api/v1/auth/csrf');csrf=document.cookie.split('; ').find(x=>x.startsWith('nexgene_csrf='))?.split('=')[1]||'';$('account').textContent='SIGN OUT';const me=await get('/api/v1/auth/me');if(me.id)await load();else csrf=''}}boot();
