@@ -1,12 +1,12 @@
 from pathlib import Path
 
-def test_v071_contract():
+def test_v080_contract():
     root=Path(__file__).parents[2]
     main=(root/'backend/app/main.py').read_text()
     js=(root/'mobile/app.js').read_text()
     html=(root/'mobile/index.html').read_text()
     compose=(root/'docker-compose.yml').read_text()
-    assert 'version="0.7.1"' in main
+    assert 'version="0.8.0"' in main
     assert 'FileResponse("mobile/index.html")' in main
     assert 'app.mount("/static"' in main
     assert 'window.location.origin' in js
