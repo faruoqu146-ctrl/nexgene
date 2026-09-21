@@ -17,6 +17,11 @@ from sqlalchemy import create_engine, String, Float, DateTime, ForeignKey, Text,
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./nexgene.db")
+# Render/Neon often provide postgres:// — SQLAlchemy 2 + psycopg3 need postgresql+psycopg://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len("postgres://"):]
+elif DATABASE_URL.startswith("postgresql://") and "+psycopg" not in DATABASE_URL:
+    DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len("postgresql://"):]
 SECRET_KEY = os.getenv("SECRET_KEY", "nexgene-dev-secret-change-me")
 DEV_MODE = os.getenv("DEV_MODE", "true").lower() == "true"
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
