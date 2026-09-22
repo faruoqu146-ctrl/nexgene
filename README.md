@@ -1,6 +1,8 @@
-# NexGene v0.8.1
+# NexGene v0.9.0
 
-APP_VERSION 0.8.1 — Security hardening follow-up to v0.8.0, based directly on the 21 September 2026 adversarial assessment.
+APP_VERSION: 0.9.0
+
+Security hardening follow-up to v0.8.0, based directly on the 21 September 2026 adversarial assessment.
 
 ## Run locally
 
@@ -16,7 +18,7 @@ Open **http://localhost:8000**.
 docker compose exec api pytest -q
 ```
 
-## Security changes in v0.8.1
+## Security changes in v0.9.0
 
 - Production startup refuses weak/missing `SECRET_KEY`.
 - Production startup requires `COOKIE_SECURE=true`.
@@ -38,6 +40,18 @@ Local development intentionally keeps `DEV_MODE=true` and `COOKIE_SECURE=false` 
 
 ## Current scope
 
-v0.8.1 remains a development build for lifestyle and simple physiological signals. Clinical and genetic data are not connected to this release. Those future data domains will require separate authorization boundaries, stronger isolation, auditability, provenance, and explicit patient consent before integration.
+v0.9.0 remains a development build for lifestyle and simple physiological signals. Clinical and genetic data are not connected to this release. Those future data domains will require separate authorization boundaries, stronger isolation, auditability, provenance, and explicit patient consent before integration.
 
 The four NexGene data pillars remain equal in the data model roadmap: lifestyle, physiological, clinical and genetic. User interaction remains lifestyle-heavy, with simple physiological entry available and hospital-driven clinical/genetic ingestion planned for later.
+
+
+## v0.9.0 — NexGene Signals
+This iteration adds the Signals layer: gentle, data-driven reasons to return without guilt-based streak mechanics.
+
+Signals can surface:
+- early-baseline milestones
+- changes in recent readings
+- emerging relationships such as sleep and focus
+- simple reasons to check in or explore Patterns
+
+Signals are observations, not diagnoses or predictions. The UI uses safe DOM construction for returned text.
