@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: sqlite:////data/nexgene.db
-      SECRET_KEY: ${SECRET_KEY:-change-this-in-production}
+      SECRET_KEY: ${SECRET_KEY:-nexgene-local-development-secret-only}
       DEV_MODE: ${DEV_MODE:-true}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:

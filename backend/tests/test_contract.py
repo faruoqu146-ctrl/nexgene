@@ -1,12 +1,14 @@
 from pathlib import Path
 
-def test_v080_contract():
-    root=Path(__file__).parents[2]
-    main=(root/'backend/app/main.py').read_text()
-    js=(root/'mobile/app.js').read_text()
-    html=(root/'mobile/index.html').read_text()
-    compose=(root/'docker-compose.yml').read_text()
-    assert 'version="0.8.0"' in main
+
+def test_v081_contract():
+    root = Path(__file__).parents[2]
+    main = (root / 'backend/app/main.py').read_text()
+    js = (root / 'mobile/app.js').read_text()
+    html = (root / 'mobile/index.html').read_text()
+    compose = (root / 'docker-compose.yml').read_text()
+    readme = (root / 'README.md').read_text()
+    assert 'APP_VERSION = "0.8.1"' in main
     assert 'FileResponse("mobile/index.html")' in main
     assert 'app.mount("/static"' in main
     assert 'window.location.origin' in js
@@ -16,3 +18,8 @@ def test_v080_contract():
     assert '/static/styles.css' in html and '/static/app.js' in html
     assert 'nexgene_data' in compose
     assert 'activity_level' in js and 'diet_quality' in js and 'nicotine' in js
+    assert 'innerHTML' not in js
+    assert 'DUMMY_PASSWORD_HASH' in main
+    assert 'RateLimitBucket' in main
+    assert 'docs_url="/docs" if DEV_MODE else None' in main
+    assert 'APP_VERSION' in readme and 'v0.8.1' in readme
