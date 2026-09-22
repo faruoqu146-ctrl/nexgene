@@ -1,1 +1,19 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NexGene</title><link rel="stylesheet" href="/static/styles.css"></head><body><div class="app"><header><div class="logo"><span>N</span><div><b>NEXGENE</b><small>your living baseline</small></div></div><button id="account" onclick="account()">SIGN IN</button></header><main><section id="auth" class="auth hide"><div class="eyebrow">PRIVATE BY DEFAULT</div><h1>Enter your baseline.</h1><p>Your data stays attached to your account. Start small. Learn over time.</p><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Password (12+ characters)"><div class="authrow"><button onclick="register()">CREATE ACCOUNT</button><button class="ghost" onclick="login()">SIGN IN</button></div><small id="authmsg"></small></section><section id="todayView"><section class="hero"><div class="eyebrow" id="date">TODAY</div><h1 id="greeting">Good evening.</h1><p>Nothing here needs to be perfect. NexGene is interested in the pattern.</p><div class="orb"><i></i></div></section><section class="progress"><div><span>Today</span><b id="count">0 / 2 check-ins</b></div><div class="track"><i id="bar"></i></div></section><h2>Today <small>LIVE SNAPSHOT</small></h2><section id="snapshot" class="grid"><div class="empty"><b>A quiet page.</b><span>Two tiny check-ins begin the picture.</span></div></section><div class="actions"><button class="action" onclick="start('morning')"><strong>☼</strong><div><b>Morning</b><span>Sleep · energy · context</span></div>→</button><button class="action night" onclick="start('evening')"><strong>◐</strong><div><b>Evening</b><span>Mood · stress · focus · lifestyle</span></div>→</button></div><h2>What we're noticing <small>EARLY SIGNALS</small></h2><div class="insight" id="insight">Your baseline is beginning to take shape.</div></section><section id="patternsView" class="view hide"><div class="viewhead"><div class="eyebrow">30 DAY WINDOW</div><h1>Your patterns.</h1><p>Not predictions. Just the shape of your days so far.</p></div><div id="patternCards" class="patternCards"></div><div class="chartbox"><div class="charttitle"><b>Sleep & focus</b><small>recent daily averages</small></div><div id="chart"></div></div></section><section id="timelineView" class="view hide"><div class="viewhead"><div class="eyebrow">YOUR RECORD</div><h1>The living timeline.</h1><p>Every check-in becomes part of your personal history.</p></div><div id="timeline" class="timeline"></div></section></main><nav><button id="nToday" class="active" onclick="showView('today')">TODAY</button><button id="nPatterns" onclick="showView('patterns')">PATTERNS</button><button id="nTimeline" onclick="showView('timeline')">TIMELINE</button></nav><div id="sheet" class="sheet hide"><div class="panel"><div class="sheettop"><button onclick="closeSheet()">×</button><span id="step"></span></div><div id="q"></div><div id="choices"></div><button id="next" disabled onclick="nextStep()">CONTINUE</button></div></div></div><script src="/static/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NexGene</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>NexGene</h1>
+      <p class="tagline">Lifestyle &amp; physiological signals</p>
+    </header>
+    <main id="main"></main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
