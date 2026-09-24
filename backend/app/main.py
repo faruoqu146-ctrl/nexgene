@@ -1,7 +1,5 @@
-"""NexGene API entrypoint — reassembles source parts shipped for GitHub size limits."""
-from pathlib import Path
-_parts = sorted(Path(__file__).parent.glob("_main_part*.txt"))
-if not _parts:
-    raise RuntimeError("Missing _main_part*.txt source shards")
-_code = "".join(p.read_text(encoding="utf-8") for p in _parts)
-exec(compile(_code, str(Path(__file__).resolve()), "exec"), globals())
+"""Bootstrap: load complete main from last known good commit blob via raw.githubusercontent.com."""
+import urllib.request
+_URL = "https://raw.githubusercontent.com/faruoqu146-ctrl/nexgene/d38d2a8109949d06577d12ab77ed9613cb889c51/backend/app/main.py"
+_code = urllib.request.urlopen(_URL, timeout=30).read().decode("utf-8")
+exec(compile(_code, "backend/app/main.py", "exec"), globals())
