@@ -76,3 +76,36 @@ def test_production_docs_are_configurable_off():
     if not DEV_MODE:
         assert client.get('/docs').status_code == 404
         assert client.get('/openapi.json').status_code == 404
+
+
+def test_profile_is_user_scoped_and_csrf_protected():
+    creds = strong(email='profile@example.com')
+    r = client.post('/api/v1/auth/register', json=creds)
+    assert r.status_code in (200, 409)
+    if r.status_code != 200 or 'nexgene_session' not in r.cookies:
+        r = client.post('/api/v1/auth/login', json=creds)
+        assert r.status_code == 200
+    csrf = r.cookies.get('nexgene_csrf') or client.cookies.get('nexgene_csrf')
+    bad = client.put('/api/v1/profile', json={'country': 'Nigeria'})
+    assert bad.status_code == 403
+    good = client.put('/api/v1/profile', json={'country': 'Nigeria', 'occupation': 'Researcher', 'student': False}, headers={'X-CSRF-Token': csrf})
+    assert good.status_code == 200
+    got = client.get('/api/v1/profile')
+    assert got.status_code == 200
+    assert got.json()['profile']['country'] == 'Nigeria'
+
+
+def test_weekly_report_is_user_scoped_and_returns_safe_shape():
+    creds = strong(email='report@example.com')
+    r = client.post('/api/v1/auth/register', json=creds)
+    assert r.status_code in (200, 409)
+    if r.status_code != 200 or 'nexgene_session' not in r.cookies:
+        r = client.post('/api/v1/auth/login', json=creds)
+        assert r.status_code == 200
+    csrf = r.cookies.get('nexgene_csrf') or client.cookies.get('nexgene_csrf')
+    client.post('/api/v1/checkins/morning', json={'values': {'sleep_duration': 7.5, 'energy': 8}}, headers={'X-CSRF-Token': csrf})
+    report = client.get('/api/v1/reports/weekly')
+    assert report.status_code == 200
+    body = report.json()
+    assert body['status'] in ('ready', 'not_ready')
+    assert 'profile' in body and 'coverage' in body
