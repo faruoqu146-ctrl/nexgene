@@ -5,13 +5,22 @@ services:
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: sqlite:////data/nexgene.db
+      CLINICAL_DATABASE_URL: sqlite:////data/nexgene_clinical.db
       SECRET_KEY: ${SECRET_KEY:-nexgene-local-development-secret-only}
       DEV_MODE: ${DEV_MODE:-true}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      CLINICAL_PROVIDER_ID: ${CLINICAL_PROVIDER_ID:-development-provider}
+      CLINICAL_PROVIDER_KEY: ${CLINICAL_PROVIDER_KEY:-replace-with-a-local-development-secret}
     ports:
       - "8000:8000"
     volumes:
       - nexgene_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 volumes:
   nexgene_data:

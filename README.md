@@ -1,61 +1,111 @@
-# NexGene v1.3.0
+# NexGene v1.4.0
 
-## Phase 6: Personal Health Intelligence
+**Personal health intelligence with a dual-authorized clinical compartment.**
 
-NexGene v1.3.0 extends the tested v1.1.x foundation with a new molecular / biomarker signal layer and an evidence-aware intelligence foundation.
+NexGene is a privacy-first API and mobile web client for longitudinal lifestyle and physiological signals, molecular/biomarker deviation tracking, evidence-linked insights, and a strictly isolated clinical data plane.
 
+Built for correctness under incomplete data, explicit uncertainty, and clear boundaries between observation, inference, and clinical escalation.
 
-### Phase 6 additions
+---
 
-- **Personal baseline engine**: compares recent 7-day windows with a preceding 21-day personal baseline.
-- **Multi-factor longitudinal analysis**: exploratory daily associations across sleep, focus, energy, stress, activity, caffeine and related signals. Associations are explicitly non-causal.
-- **Data-quality surface**: reports coverage, observed days, signal counts and biomarker quality so sparse data is not presented as certainty.
-- **Evidence-linked inference**: detected patterns generate topic signals for the local evidence registry.
-- **Structured intelligence insights**: `/api/v1/intelligence/insights` separates observed findings from inferred findings, evidence, uncertainty and next steps.
-- **Clinical escalation remains bounded**: v1.3 can recommend discussing persistent molecular deviations with a qualified professional, but it does not perform clinical triage or diagnosis.
+## Why this architecture
 
-### New architectural layers
+| Pillar | Role |
+|--------|------|
+| **Lifestyle** | Self-reported check-ins (sleep, energy, stress, activity, …) |
+| **Physiological** | Sensor-style and quantitative trends |
+| **Molecular / biomarker** | Lab values *or* direction/significance deviation signals |
+| **Clinical** | Separate store; dual auth; never mixed into the consumer timeline by default |
+| **Genetic** | Reserved (out of scope for v1.4) |
 
-- **Molecular / Biomarker signals**: supports sensor-style deviation signals as well as quantitative laboratory values. A deviation signal records direction/significance/confidence without pretending to be a concentration.
-- **Evidence registry**: structured records for guidelines, research, medical reports, clinical references, and reviews, with provenance fields and topic tags.
-- **Evidence retrieval**: authenticated search over the local evidence registry. Development-only batch import is available for loading a curated knowledge pool.
-- **Intelligence brief**: combines longitudinal lifestyle/physiological observations with molecular signals and retrieves relevant evidence. It explicitly separates observations from inferences and keeps clinical escalation as a distinct, currently unassessed layer.
-- **AI handoff**: the optional AI weekly read now receives the bounded weekly report plus the structured intelligence brief, rather than raw unrestricted health history.
+Clinical records require **user consent + provider authorization**. Revocation immediately removes application access. The intelligence brief may expose only a **bounded** clinical context when dual authorization exists — never the full clinical packet to the optional AI layer.
 
-### Four-pillar direction remains intact
+---
 
-Lifestyle, physiological, clinical, and genetic data remain peer scientific pillars. The molecular / biomarker layer adds another evidence stream without replacing those pillars. Clinical and genetic ingestion remain out of scope for this release.
-
-### Security boundaries
-
-- Biomarker writes are authenticated and CSRF protected.
-- Biomarker data is scoped to the authenticated user.
-- Deviation-mode signals cannot carry a fake quantitative concentration.
-- Evidence import is development-only in v1.2.0.
-- AI remains opt-in and server-side.
-- The AI layer is instructed to use only structured evidence, avoid diagnosis/treatment claims, and preserve uncertainty.
-
-### Important limitation
-
-The evidence registry is an architectural foundation, not a populated medical knowledge base. It does not claim that a large medical literature corpus is present in this development build. Production knowledge retrieval will require a curated, provenance-preserving corpus, ingestion/update pipeline, source validation, retrieval/ranking, and a separate clinical-safety review.
-
-### Development
+## Quick start
 
 ```bash
+cp .env.example .env   # edit secrets for anything beyond local demo
 docker compose up --build
 ```
 
-API: `http://localhost:8000`
+| Surface | URL |
+|---------|-----|
+| API | http://localhost:8000 |
+| Health | http://localhost:8000/api/v1/health |
+| Mobile UI | http://localhost:8000/ |
+| OpenAPI | http://localhost:8000/docs *(only when `DEV_MODE=true`)* |
 
-Docs are available only while `DEV_MODE=true`.
+### Local tests (no Docker)
 
-### Version
+```bash
+pip install -r backend/requirements.txt
+TESTING=1 \
+DATABASE_URL=sqlite:////tmp/nexgene.db \
+CLINICAL_DATABASE_URL=sqlite:////tmp/nexgene_clinical.db \
+CLINICAL_PROVIDER_KEY=test-provider-key \
+python -m pytest backend/tests/ -v
+```
 
-`APP_VERSION = 1.3.0`
+---
 
-### Retained product layers
+## Security boundaries (non-negotiable)
 
-- NexGene Signals
-- Weekly NexGene Report
-- Molecular / Biomarker signal layer
-- Evidence registry and evidence-aware intelligence
+- **Auth**: cookie sessions + CSRF double-submit; password policy enforced; timing-safe login path with dummy hash verification.
+- **Production gates**: `DEV_MODE=false` requires a strong `SECRET_KEY` (≥32 chars) and `COOKIE_SECURE=true`.
+- **Clinical plane**: separate `CLINICAL_DATABASE_URL`; opaque `subject_ref`; provider sync behind `X-Clinical-Provider-Key` in development builds.
+- **Data minimization for AI**: structured weekly report + intelligence brief only; diagnosis/treatment language is disallowed by design.
+- **Rate limits** on register/login/reset and related endpoints.
+- **Headers**: `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`.
+
+See [SECURITY.md](SECURITY.md).
+
+---
+
+## API surface (v1)
+
+| Area | Endpoints (representative) |
+|------|----------------------------|
+| Auth | `/api/v1/auth/register`, `login`, `logout`, `csrf`, `me`, password reset |
+| Profile | `/api/v1/profile` |
+| Check-ins | `/api/v1/checkins/morning` (and related) |
+| Reports | `/api/v1/reports/weekly` |
+| Biomarkers | `/api/v1/biomarkers`, `/api/v1/biomarkers/signals` |
+| Intelligence | `/api/v1/intelligence/brief`, `insights`, `data-quality` |
+| Evidence | `/api/v1/evidence/search`, `import` *(dev-only)* |
+| Clinical | `/api/v1/clinical/consent`, `revoke`, `records`; provider `grant` / `records` |
+
+`APP_VERSION = 1.4.0`
+
+---
+
+## Clinical compartment (Phase 7)
+
+```bash
+CLINICAL_DATABASE_URL=sqlite:///./nexgene_clinical.db
+CLINICAL_PROVIDER_ID=development-provider
+CLINICAL_PROVIDER_KEY=replace-with-a-local-development-secret
+```
+
+1. User consents → opaque `subject_ref` issued.  
+2. Provider grants authorization with the provider key.  
+3. Provider may sync records only when consent exists.  
+4. User revocation clears application access immediately.
+
+**Do not** expose development provider keys. Production hospital integration must replace the shared key with organization-grade identity, mutual TLS, and audit logging.
+
+---
+
+## Development notes
+
+- Evidence registry is an **architectural foundation**, not a populated medical corpus.
+- Associations from the personal baseline / multi-factor engine are **explicitly non-causal**.
+- Sparse data surfaces coverage and quality so the product does not pretend certainty.
+
+Further design detail: `docs/PHASE_5_ARCHITECTURE.md`, `docs/PHASE_6_PERSONAL_HEALTH_INTELLIGENCE.md`, `docs/PHASE_7_CLINICAL_COMPARTMENT.md`.
+
+---
+
+## License & status
+
+Research / development build. Not a medical device. Not for diagnosis or treatment decisions.
