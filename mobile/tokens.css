@@ -1,0 +1,51 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap");
+
+:root {
+  --bg: #070a08;
+  --bg-deep: #030503;
+  --surface: #0e1410;
+  --surface-2: #111713;
+  --surface-3: #151b18;
+  --ink: #f2f5ef;
+  --muted: #89938b;
+  --muted-2: #657168;
+  --line: #29332d;
+  --line-strong: #3a493e;
+  --acid: #c8ff66;
+  --acid-2: #a8f45d;
+  --danger: #e08a6e;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --space-1: 6px;
+  --space-2: 9px;
+  --space-3: 14px;
+  --space-4: 18px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --type-xs: 8px;
+  --type-sm: 10px;
+  --type-md: 13px;
+  --type-lg: 18px;
+  --type-xl: 28px;
+  --type-hero: clamp(36px, 8vw, 46px);
+  --shadow: 0 18px 50px #0006;
+  --font: Manrope, ui-sans-serif, system-ui, sans-serif;
+  --mono: "DM Mono", ui-monospace, monospace;
+  --app-max: 480px;
+  --focus: 0 0 0 3px #c8ff6644;
+  --ease: 180ms ease;
+}
+
+@media (min-width: 900px) {
+  :root {
+    --app-max: 920px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ease: 1ms linear;
+  }
+}
