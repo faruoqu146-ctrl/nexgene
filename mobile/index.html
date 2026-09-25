@@ -1,7 +1,20 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NexGene</title><link rel="stylesheet" href="/static/styles.css"></head><body><div class="app"><header><div class="logo"><span>N</span><div><b>NEXGENE</b><small>your living baseline</small></div></div><button id="account" onclick="account()">SIGN IN</button></header><main><section id="auth" class="auth hide"><div class="authshell"><div class="authmark">N</div><div class="eyebrow">PRIVATE BY DEFAULT</div><div class="authtabs"><button id="tabLogin" class="active" onclick="setAuthMode('login')">SIGN IN</button><button id="tabRegister" onclick="setAuthMode('register')">CREATE ACCOUNT</button></div><h1 id="authTitle">Welcome back.</h1><p id="authLead">Your baseline is waiting where you left it.</p><label class="field"><span>Email</span><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></label><label class="field"><span>Password</span><div class="passwordField"><input id="password" type="password" autocomplete="current-password" placeholder="Your password"><button type="button" onclick="togglePassword()" aria-label="Show password">SHOW</button></div></label><div id="passwordRules" class="passwordRules hide"><span>12+ characters</span><span>Upper + lower case</span><span>Number + symbol</span></div><button id="authPrimary" class="authPrimary" onclick="submitAuth()">SIGN IN</button><div class="authDivider"><span>OR</span></div><div id="googleButton" class="googleButton"></div><small id="googleNote" class="authnote"></small><small id="authmsg" class="authmsg"></small><p class="authfine">Your health data stays in NexGene. Google is used only to authenticate your account.</p></div></section>
-<section id="onboarding" class="onboarding hide"><div class="card"><div class="eyebrow">CONTEXT</div><h2>A little about you</h2><p class="lead">Optional. Used only as analysis context — never as a stereotype.</p><label class="field"><span>Age range</span><input id="age_range" placeholder="e.g. 25-34"></label><label class="field"><span>Country</span><input id="country" placeholder="e.g. Nigeria"></label><label class="field"><span>Occupation</span><input id="occupation" placeholder="e.g. Researcher"></label><label class="field"><span>Student?</span><select id="student"><option value="">Prefer not to say</option><option value="yes">Yes</option><option value="no">No</option></select></label><label class="field"><span>Study field</span><input id="study_field" placeholder="Optional"></label><label class="field"><span>Schedule</span><select id="schedule"><option value="">Optional</option><option value="regular">Regular</option><option value="shift">Shift work</option><option value="flexible">Flexible</option></select></label><label class="field"><span>Timezone</span><input id="timezone" placeholder="e.g. Africa/Lagos"></label><button class="authPrimary" onclick="saveProfile()">SAVE CONTEXT</button><small id="profilemsg" class="authmsg"></small></div></section>
-<section class="home"><div class="date" id="date"></div><div class="actions"><button onclick="start('morning')">MORNING CHECK-IN</button><button onclick="start('evening')">EVENING CHECK-IN</button></div><div id="today" class="today"></div><div class="nav"><button onclick="showView('home')">HOME</button><button onclick="showView('patterns')">PATTERNS</button><button onclick="showView('report')">REPORT</button></div></section>
-<section id="patterns" class="hide"></section>
-<section id="report" class="hide"></section>
-</main>
-<div id="sheet" class="sheet hide"><div class="panel"><div class="sheettop"><button onclick="closeSheet()">×</button><span id="step"></span></div><div id="q"></div><div id="choices"></div><button id="next" disabled onclick="nextStep()">CONTINUE</button></div></div></div><script src="/static/app.js"></script><script src="/static/auth_fix.js"></script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NexGene</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">NexGene</div>
+    <div id="auth-status" class="muted"></div>
+  </header>
+  <main id="main"></main>
+  <nav id="nav" class="bottom-nav" hidden></nav>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
