@@ -1,82 +1,61 @@
-# NexGene v1.0.0
+# NexGene v1.3.0
 
-Phase 4: personalization context and the Weekly NexGene Report, building on v1.1.0 Signals and the v0.8.x security hardening.
+## Phase 6: Personal Health Intelligence
 
-## Run locally
+NexGene v1.3.0 extends the tested v1.1.x foundation with a new molecular / biomarker signal layer and an evidence-aware intelligence foundation.
+
+
+### Phase 6 additions
+
+- **Personal baseline engine**: compares recent 7-day windows with a preceding 21-day personal baseline.
+- **Multi-factor longitudinal analysis**: exploratory daily associations across sleep, focus, energy, stress, activity, caffeine and related signals. Associations are explicitly non-causal.
+- **Data-quality surface**: reports coverage, observed days, signal counts and biomarker quality so sparse data is not presented as certainty.
+- **Evidence-linked inference**: detected patterns generate topic signals for the local evidence registry.
+- **Structured intelligence insights**: `/api/v1/intelligence/insights` separates observed findings from inferred findings, evidence, uncertainty and next steps.
+- **Clinical escalation remains bounded**: v1.3 can recommend discussing persistent molecular deviations with a qualified professional, but it does not perform clinical triage or diagnosis.
+
+### New architectural layers
+
+- **Molecular / Biomarker signals**: supports sensor-style deviation signals as well as quantitative laboratory values. A deviation signal records direction/significance/confidence without pretending to be a concentration.
+- **Evidence registry**: structured records for guidelines, research, medical reports, clinical references, and reviews, with provenance fields and topic tags.
+- **Evidence retrieval**: authenticated search over the local evidence registry. Development-only batch import is available for loading a curated knowledge pool.
+- **Intelligence brief**: combines longitudinal lifestyle/physiological observations with molecular signals and retrieves relevant evidence. It explicitly separates observations from inferences and keeps clinical escalation as a distinct, currently unassessed layer.
+- **AI handoff**: the optional AI weekly read now receives the bounded weekly report plus the structured intelligence brief, rather than raw unrestricted health history.
+
+### Four-pillar direction remains intact
+
+Lifestyle, physiological, clinical, and genetic data remain peer scientific pillars. The molecular / biomarker layer adds another evidence stream without replacing those pillars. Clinical and genetic ingestion remain out of scope for this release.
+
+### Security boundaries
+
+- Biomarker writes are authenticated and CSRF protected.
+- Biomarker data is scoped to the authenticated user.
+- Deviation-mode signals cannot carry a fake quantitative concentration.
+- Evidence import is development-only in v1.2.0.
+- AI remains opt-in and server-side.
+- The AI layer is instructed to use only structured evidence, avoid diagnosis/treatment claims, and preserve uncertainty.
+
+### Important limitation
+
+The evidence registry is an architectural foundation, not a populated medical knowledge base. It does not claim that a large medical literature corpus is present in this development build. Production knowledge retrieval will require a curated, provenance-preserving corpus, ingestion/update pipeline, source validation, retrieval/ranking, and a separate clinical-safety review.
+
+### Development
 
 ```bash
 docker compose up --build
 ```
 
-Open **http://localhost:8000**.
+API: `http://localhost:8000`
 
-## Test
+Docs are available only while `DEV_MODE=true`.
 
-```bash
-docker compose exec api pytest -q
-```
+### Version
 
-## v1.0.0: Personalization + Weekly Report
+`APP_VERSION = 1.3.0`
 
-- Adds a lightweight personal-context profile: age range, country, occupation/work role, student status, study field, schedule and optional timezone.
-- Context is used as an analysis lens, not a stereotype engine. Occupation and country do not automatically produce health conclusions.
-- Adds `/api/v1/profile` with authenticated, CSRF-protected updates.
-- Adds the **Weekly NexGene Report** at `/api/v1/reports/weekly`.
-- Weekly reports summarize recorded signal, compare with the available personal window, identify cautious relationships, surface positive observations, and offer one small experiment for the following week.
-- Reports explicitly distinguish patterns from diagnoses and avoid pretending that one week proves causation.
-- The UI adds a lightweight context onboarding screen and a dedicated REPORT view.
-- User/API-derived report content is rendered through safe DOM construction, not `innerHTML`.
+### Retained product layers
 
-## Security posture carried forward
-
-- Production startup refuses weak/missing `SECRET_KEY`.
-- Production startup requires `COOKIE_SECURE=true`.
-- Production disables `/docs`, `/redoc`, and `/openapi.json`.
-- Login uses a dummy PBKDF2 verification path for missing accounts.
-- Registration uses a uniform response for existing accounts.
-- Password-reset requests never expose reset tokens outside `DEV_MODE`.
-- Rate limiting is persisted in the database.
-- Check-in payloads are capped by request size, observation count, allow-list and text length.
-- CSRF rotation updates the server-side session hash.
-- Session revocation remains active on logout and password reset.
-- PBKDF2-SHA256 uses 600,000 rounds.
-
-## Development configuration
-
-Local development intentionally keeps `DEV_MODE=true` and `COOKIE_SECURE=false` so the app can run on plain HTTP. Development-only verification/reset tokens may appear in API responses because no mail provider is configured.
-
-**Never expose that configuration publicly.** Production must use a strong random `SECRET_KEY`, `DEV_MODE=false`, `COOKIE_SECURE=true`, HTTPS, and a managed database.
-
-## Current scope
-
-v1.0.0 remains a development build for lifestyle and simple physiological signals. Clinical and genetic data are not connected to this release. Those future domains require separate authorization boundaries, stronger isolation, auditability, provenance, explicit patient consent and dedicated security testing before integration.
-
-The four NexGene data pillars remain equal in the long-term data model: lifestyle, physiological, clinical and genetic. User interaction remains lifestyle-heavy, with simple physiological entry available and hospital-driven clinical/genetic ingestion planned later.
-
-## NexGene Signals
-
-Signals provide gentle, data-driven reasons to return without guilt-based streak mechanics: early baseline milestones, changes in readings, emerging relationships and reasons to check in or explore Patterns.
-
-## Weekly NexGene Report
-
-The product cadence is now:
-
-**Record → Discover → Get curious → Return → Discover more → Weekly report**
-
-The report is intentionally conversational. Serious calculations stay underneath; the user-facing layer should feel like a smart friend who has been quietly paying attention, not a statistics department.
-
-
-## v1.1.0 additions
-- Refined account creation/sign-in experience with manual email/password and optional Google Sign-In.
-- Google Sign-In is server-verified and only enabled when `GOOGLE_CLIENT_ID` is configured. Existing password accounts are not silently linked by matching email.
-- Optional AI-assisted weekly reports. AI is disabled by default and requires `AI_ANALYSIS_ENABLED=true` plus `OPENAI_API_KEY`. A user must explicitly enable AI analysis before weekly evidence is sent to the configured provider.
-- AI receives the bounded deterministic weekly evidence, not raw clinical/genomic data.
-- Added baseline security headers.
-
-### Optional environment
-- `GOOGLE_CLIENT_ID` for Google Identity Services.
-- `AI_ANALYSIS_ENABLED=false` by default.
-- `OPENAI_API_KEY` server-side only. Never put this key in mobile JavaScript.
-- `OPENAI_MODEL` defaults to `gpt-5.6-luna` and can be changed without code changes.
-
-Google Sign-In follows Google's Identity Services flow and server-side ID-token verification.
+- NexGene Signals
+- Weekly NexGene Report
+- Molecular / Biomarker signal layer
+- Evidence registry and evidence-aware intelligence
