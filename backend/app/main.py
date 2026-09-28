@@ -1,6 +1,9 @@
 """NexGene bootstrap: offline-first load + production auth patches."""
 import os
 import urllib.request
+import logging
+
+_log = logging.getLogger("nexgene.bootstrap")
 
 _db = os.getenv("DATABASE_URL", "")
 if _db.startswith("postgres://"):
@@ -31,13 +34,12 @@ _code = _code.replace(
     'DUMMY_PASSWORD_HASH = "$pbkdf2-sha256$600000$FMI4ZwzhXCsFgJByDgEgpA$1bcAR/yIQ6NygmQqYc6GEqL03OrGQXzepR2Zjnc5ExI"',
 )
 
-# Force rate_limit to no-op: the RateLimitBucket path was 500ing all auth on Render.
+# Disable rate_limit writes (were crashing auth when RateLimitBucket schema mismatched)
 _code = _code.replace(
     "def rate_limit(request: Request, key: str, limit: int, s: Session):\n    ip = request.client.host if request.client else \"unknown\"",
-    "def rate_limit(request: Request, key: str, limit: int, s: Session):\n    return  # disabled: RateLimitBucket writes were crashing auth\n    ip = request.client.host if request.client else \"unknown\"",
+    "def rate_limit(request: Request, key: str, limit: int, s: Session):\n    return\n    ip = request.client.host if request.client else \"unknown\"",
 )
 
-# Corrupt/legacy password hashes must yield 401, never 500
 _code = _code.replace(
     "if not pwd.verify(x.password, u.password_hash):\n        raise HTTPException(401, \"Invalid email or password\")",
     "try:\n        _ok = pwd.verify(x.password, u.password_hash)\n    except Exception:\n        _ok = False\n    if not _ok:\n        raise HTTPException(401, \"Invalid email or password\")",
@@ -48,3 +50,24 @@ _code = _code.replace(
 )
 
 exec(compile(_code, "backend/app/main.py", "exec"), globals())
+
+# --- Schema repair for Postgres (create_all does not ALTER existing tables) ---
+try:
+    from sqlalchemy import inspect, text as _sql_text
+
+    _insp = inspect(engine)
+    _tables = set(_insp.get_table_names())
+    if "users" in _tables:
+        _cols = {c["name"] for c in _insp.get_columns("users")}
+        with engine.begin() as _conn:
+            if "email_verified" not in _cols:
+                _conn.execute(_sql_text("ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE"))
+            if "google_sub" not in _cols:
+                _conn.execute(_sql_text("ALTER TABLE users ADD COLUMN google_sub VARCHAR(255)"))
+            if "ai_analysis_enabled" not in _cols:
+                _conn.execute(_sql_text("ALTER TABLE users ADD COLUMN ai_analysis_enabled BOOLEAN DEFAULT FALSE"))
+    # Ensure all model tables exist (including rate_limit_buckets)
+    Base.metadata.create_all(engine)
+    _log.info("nexgene schema repair complete")
+except Exception as _e:
+    _log.exception("nexgene schema repair failed: %s", _e)
