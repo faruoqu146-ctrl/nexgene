@@ -11,6 +11,9 @@ def test_v140_contract():
     compose = (root / "docker-compose.yml").read_text()
     readme = (root / "README.md").read_text()
 
+    # Must be self-contained — no remote code execution bootstrap
+    assert "urllib.request.urlopen" not in main
+    assert "exec(compile" not in main
     assert 'APP_VERSION = "1.4.0"' in main
     assert 'FileResponse("mobile/index.html")' in main
     assert 'app.mount("/static"' in main
@@ -41,3 +44,5 @@ def test_v140_contract():
     assert "1.4.0" in readme
     assert "clinical" in readme.lower()
     assert "NexGene" in readme
+    assert "require_csrf" in main
+    assert "compare_digest" in main
