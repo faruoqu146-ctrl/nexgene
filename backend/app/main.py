@@ -1,6 +1,7 @@
 """NexGene API v1.4.0 — personal health intelligence with clinical compartment.
 
 Offline application packaged as local `main.part0` + `main.part1` (no network).
+Reviewers: concatenate the two part files for the full readable source.
 Not a medical device. Observational signals only; not for diagnosis or treatment.
 """
 from pathlib import Path as _Path
