@@ -1,12 +1,17 @@
 import os
 os.environ.setdefault("TESTING", "1")
 from pathlib import Path
+import base64
+import zlib
 
 
 def _api_source(app_dir: Path) -> str:
-    p0, p1 = app_dir / "main.part0", app_dir / "main.part1"
-    if p0.is_file() and p1.is_file():
-        return p0.read_text() + p1.read_text()
+    z0, z1 = app_dir / "main.part0.zlib.b64", app_dir / "main.part1.zlib.b64"
+    if z0.is_file() and z1.is_file():
+        return b"".join(
+            zlib.decompress(base64.b64decode(p.read_text(encoding="ascii")))
+            for p in (z0, z1)
+        ).decode("utf-8")
     return (app_dir / "main.py").read_text()
 
 
